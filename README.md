@@ -25,6 +25,42 @@ Rozwiązanie składa się z dwóch projektów webowych w **.NET 8**:
 
 ## Uruchomienie
 
+### Wariant A: Jako usługa systemowa w tle (macOS `launchd` / Windows Service) + Web API
+
+Projekt `PocHealthCheck.WorkerWeb` jest skonfigurowany do pracy jako usługa systemowa (`UseWindowsService()`, `UseSystemd()` oraz obsługa macOS `launchd` z bezpiecznym `ContentRootPath`).
+
+#### Na macOS (`launchd` LaunchAgent – bez `sudo`, autostart i automatyczny restart `KeepAlive`):
+
+```bash
+# 1. Publikacja Release, rejestracja w ~/Library/LaunchAgents i start usługi w tle (port 5200):
+./scripts/macos/install-macos-service.sh
+
+# 2. Sprawdzenie statusu usługi launchd, ostatnich logów i endpointu /health:
+./scripts/macos/status-macos-service.sh
+
+# 3. Uruchomienie Web API z panelem HealthChecks UI (port 5100):
+dotnet run --project PocHealthCheck.Api
+
+# (Opcjonalnie) Zatrzymanie i odinstalowanie usługi z macOS:
+./scripts/macos/uninstall-macos-service.sh
+```
+
+Logi usługi macOS trafiają do:
+- `~/Library/Logs/PocHealthCheck.WorkerWeb/worker.out.log`
+- `~/Library/Logs/PocHealthCheck.WorkerWeb/worker.err.log`
+
+#### Na Windows (`Windows Service` – z poziomu PowerShell jako Administrator):
+
+```powershell
+# Instalacja i uruchomienie jako Windows Service (z automatycznym restartem SCM przy awarii):
+.\scripts\windows\install-windows-service.ps1
+
+# Odinstalowanie usługi Windows Service:
+.\scripts\windows\uninstall-windows-service.ps1
+```
+
+### Wariant B: Uruchomienie deweloperskie z konsoli
+
 Uruchom oba projekty w dwóch osobnych terminalach z katalogu głównego:
 
 ```bash

@@ -84,6 +84,10 @@ public sealed class OrderProcessingWorker(
                 await timer.WaitForNextTickAsync(stoppingToken);
             }
         }
+        catch (OperationCanceledException)
+        {
+            // Zamykanie usługi systemowej (SIGTERM / Windows SCM Stop)
+        }
         finally
         {
             stateTracker.MarkStopped(WorkerName);

@@ -1,13 +1,33 @@
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Hosting.WindowsServices;
 using PocHealthCheck.WorkerWeb.HealthChecks;
 using PocHealthCheck.WorkerWeb.Heartbeat;
 using PocHealthCheck.WorkerWeb.Models;
 using PocHealthCheck.WorkerWeb.Resilience;
 using PocHealthCheck.WorkerWeb.Workers;
 
-var builder = WebApplication.CreateBuilder(args);
+// Gdy aplikacja działa jako Windows Service, macOS launchd daemon lub Linux systemd,
+// katalog roboczy może nie wskazywać na folder aplikacji — ustawiamy bezpieczny ContentRootPath.
+var contentRoot = WindowsServiceHelpers.IsWindowsService()
+    || !File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json"))
+        ? AppContext.BaseDirectory
+        : Directory.GetCurrentDirectory();
+
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = contentRoot
+});
+
+// Obsługa uruchamiania jako usługa systemowa (Windows Service oraz Linux systemd;
+// na macOS launchd zarządza procesem bezpośrednio z obsługą sygnałów POSIX SIGTERM).
+builder.Host.UseWindowsService(options =>
+{
+    options.ServiceName = "PocHealthCheck.WorkerWeb";
+});
+builder.Host.UseSystemd();
 
 builder.Services.AddSingleton<WorkerStateTracker>();
 builder.Services.AddSingleton<HeartbeatRegistry>();
@@ -78,7 +98,11 @@ app.MapGet("/", (WorkerStateTracker stateTracker, HeartbeatRegistry heartbeatReg
     var now = DateTimeOffset.UtcNow;
     return Results.Ok(new
     {
-        service = "PocHealthCheck.WorkerWeb (.NET 8)",
+        service = "PocHealthCheck.WorkerWeb (.NET 8 Background Service Host)",
+        operatingSystem = System.Runtime.InteropServices.RuntimeInformation.OSDescription,
+        isWindowsService = WindowsServiceHelpers.IsWindowsService(),
+        processId = Environment.ProcessId,
+        contentRootPath = app.Environment.ContentRootPath,
         startedAtUtc = heartbeatRegistry.ServiceStartedAtUtc,
         uptimeSeconds = Math.Round((now - heartbeatRegistry.ServiceStartedAtUtc).TotalSeconds, 1),
         endpoints = new

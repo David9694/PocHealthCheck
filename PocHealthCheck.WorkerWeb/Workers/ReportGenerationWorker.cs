@@ -84,6 +84,10 @@ public sealed class ReportGenerationWorker(
                 await timer.WaitForNextTickAsync(stoppingToken);
             }
         }
+        catch (OperationCanceledException)
+        {
+            // Zamykanie usługi systemowej (SIGTERM / Windows SCM Stop)
+        }
         finally
         {
             stateTracker.MarkStopped(WorkerName);

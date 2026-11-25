@@ -37,18 +37,25 @@ public sealed class HeartbeatSenderService(
 
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(4));
 
-        while (!stoppingToken.IsCancellationRequested)
+        try
         {
-            var now = DateTimeOffset.UtcNow;
-            var uptime = now - heartbeatRegistry.ServiceStartedAtUtc;
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                var now = DateTimeOffset.UtcNow;
+                var uptime = now - heartbeatRegistry.ServiceStartedAtUtc;
 
-            heartbeatRegistry.Beat(
-                HeartbeatRegistry.ServiceComponentName,
-                $"Host aktywny (uptime: {uptime.TotalSeconds:F0}s)");
+                heartbeatRegistry.Beat(
+                    HeartbeatRegistry.ServiceComponentName,
+                    $"Host aktywny (uptime: {uptime.TotalSeconds:F0}s)");
 
-            await PushHeartbeatToApiAsync(now, uptime, stoppingToken);
+                await PushHeartbeatToApiAsync(now, uptime, stoppingToken);
 
-            await timer.WaitForNextTickAsync(stoppingToken);
+                await timer.WaitForNextTickAsync(stoppingToken);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Zamykanie usługi systemowej (SIGTERM / Windows SCM Stop)
         }
     }
 
