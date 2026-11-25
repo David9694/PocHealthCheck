@@ -132,6 +132,23 @@ public sealed class WorkerStateTracker
         }
     }
 
+    public bool RecoverWorker(string workerName)
+    {
+        if (!_states.TryGetValue(workerName, out var state))
+        {
+            return false;
+        }
+
+        lock (state.SyncRoot)
+        {
+            state.IsHeartbeatPaused = false;
+            state.IsForcedFailureEnabled = false;
+            state.LastIterationSucceeded = true;
+            state.LastErrorMessage = null;
+            return true;
+        }
+    }
+
     public WorkerSnapshot? GetSnapshot(string workerName)
     {
         if (!_states.TryGetValue(workerName, out var state))

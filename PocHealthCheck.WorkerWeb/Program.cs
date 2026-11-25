@@ -87,9 +87,9 @@ app.MapGet("/", (WorkerStateTracker stateTracker, HeartbeatRegistry heartbeatReg
             serviceOnlyHealth = "/health/service",
             workersOnlyHealth = "/health/workers",
             heartbeats = "/heartbeats",
-            simulatePauseHeartbeat = "POST /simulation/{workerName}/pause-heartbeat",
-            simulateForceFailure = "POST /simulation/{workerName}/force-failure",
-            simulateRecover = "POST /simulation/{workerName}/recover"
+            simulatePauseHeartbeat = "GET/POST /simulation/{workerName}/pause-heartbeat",
+            simulateForceFailure = "GET/POST /simulation/{workerName}/force-failure",
+            simulateRecover = "GET/POST /simulation/{workerName}/recover"
         },
         workers = stateTracker.GetAllSnapshots(),
         heartbeats = heartbeatRegistry.GetAll().Select(h => new
@@ -118,25 +118,40 @@ app.MapGet("/heartbeats", (HeartbeatRegistry heartbeatRegistry) =>
     }));
 });
 
-app.MapPost("/simulation/{workerName}/pause-heartbeat", (string workerName, WorkerStateTracker tracker) =>
+app.MapMethods("/simulation/{workerName}/pause-heartbeat", ["GET", "POST"], (string workerName, WorkerStateTracker tracker) =>
     tracker.SetHeartbeatPaused(workerName, paused: true)
-        ? Results.Ok(new { message = $"Wstrzymano wysyłanie heartbeat dla '{workerName}'. Za kilkanaście sekund status zmieni się na Degraded/Unhealthy." })
+        ? Results.Ok(new
+        {
+            worker = workerName,
+            simulation = "pause-heartbeat",
+            message = $"Wstrzymano wysyłanie heartbeat dla '{workerName}'. Za kilkanaście sekund status zmieni się na Degraded/Unhealthy."
+        })
         : Results.NotFound(new { error = $"Nieznany worker '{workerName}'. Dostępne: OrderProcessingWorker, ReportGenerationWorker." }));
 
-app.MapPost("/simulation/{workerName}/force-failure", (string workerName, WorkerStateTracker tracker) =>
+app.MapMethods("/simulation/{workerName}/force-failure", ["GET", "POST"], (string workerName, WorkerStateTracker tracker) =>
     tracker.SetForcedFailure(workerName, enabled: true)
-        ? Results.Ok(new { message = $"Włączono symulację ciągłego błędu dla '{workerName}'. Worker wykona retry (Polly), a po ich wyczerpaniu zgłosi Unhealthy." })
+        ? Results.Ok(new
+        {
+            worker = workerName,
+            simulation = "force-failure",
+            message = $"Włączono symulację ciągłego błędu dla '{workerName}'. W kolejnym cyklu (do 6s) worker wykona 3 próby retry (Polly), a po ich wyczerpaniu zgłosi Unhealthy."
+        })
         : Results.NotFound(new { error = $"Nieznany worker '{workerName}'. Dostępne: OrderProcessingWorker, ReportGenerationWorker." }));
 
-app.MapPost("/simulation/{workerName}/recover", (string workerName, WorkerStateTracker tracker, HeartbeatRegistry heartbeats) =>
+app.MapMethods("/simulation/{workerName}/recover", ["GET", "POST"], (string workerName, WorkerStateTracker tracker, HeartbeatRegistry heartbeats) =>
 {
-    if (!tracker.SetHeartbeatPaused(workerName, paused: false) || !tracker.SetForcedFailure(workerName, enabled: false))
+    if (!tracker.RecoverWorker(workerName))
     {
         return Results.NotFound(new { error = $"Nieznany worker '{workerName}'. Dostępne: OrderProcessingWorker, ReportGenerationWorker." });
     }
 
     heartbeats.Beat(workerName, "Przywrócono normalną pracę z trybu symulacji.");
-    return Results.Ok(new { message = $"Przywrócono prawidłowe działanie i heartbeat dla '{workerName}'." });
+    return Results.Ok(new
+    {
+        worker = workerName,
+        simulation = "recover",
+        message = $"Przywrócono prawidłowe działanie i heartbeat dla '{workerName}'."
+    });
 });
 
 app.Run();

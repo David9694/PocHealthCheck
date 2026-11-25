@@ -46,14 +46,16 @@ dotnet run --project PocHealthCheck.Api
 
 ## Testowanie awarii (Retry & Heartbeat) na żywo
 
+Endpointy symulacyjne obsługują zarówno `GET` (można wkleić bezpośrednio w przeglądarkę), jak i `POST` (`curl`):
+
 ```bash
 # 1. Wstrzymanie heartbeatu wybranego BackgroundService (po 10s Degraded, po 20s Unhealthy w UI):
-curl -X POST http://localhost:5200/simulation/OrderProcessingWorker/pause-heartbeat
+curl http://localhost:5200/simulation/OrderProcessingWorker/pause-heartbeat
 
 # 2. Wymuszenie ciągłego błędu (Polly wykona 3 próby Retry i oznaczy worker jako Unhealthy):
-curl -X POST http://localhost:5200/simulation/ReportGenerationWorker/force-failure
+curl http://localhost:5200/simulation/ReportGenerationWorker/force-failure
 
 # 3. Przywrócenie normalnej pracy workerów:
-curl -X POST http://localhost:5200/simulation/OrderProcessingWorker/recover
-curl -X POST http://localhost:5200/simulation/ReportGenerationWorker/recover
+curl http://localhost:5200/simulation/OrderProcessingWorker/recover
+curl http://localhost:5200/simulation/ReportGenerationWorker/recover
 ```
