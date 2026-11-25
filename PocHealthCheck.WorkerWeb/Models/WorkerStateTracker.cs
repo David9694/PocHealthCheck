@@ -35,7 +35,7 @@ public sealed class WorkerStateTracker
         public string? LastErrorMessage;
         public bool IsHeartbeatPaused;
         public bool IsForcedFailureEnabled;
-        public readonly Lock SyncRoot = new();
+        public readonly object SyncRoot = new();
     }
 
     private readonly ConcurrentDictionary<string, MutableWorkerState> _states = new(StringComparer.OrdinalIgnoreCase);

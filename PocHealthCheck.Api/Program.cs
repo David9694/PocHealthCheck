@@ -6,7 +6,8 @@ using PocHealthCheck.Api.Heartbeat;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<RemoteHeartbeatStore>();
 
 var startedAtUtc = DateTimeOffset.UtcNow;
@@ -30,7 +31,7 @@ var apiHealthUrl = builder.Configuration["Monitoring:ApiHealthUrl"] ?? "http://l
 builder.Services
     .AddHealthChecksUI(setup =>
     {
-        setup.SetHeaderText("POC .NET 10 - Health Checks & Background Services Monitor");
+        setup.SetHeaderText("POC .NET 8 - Health Checks & Background Services Monitor");
         setup.SetEvaluationTimeInSeconds(5);
         setup.SetMinimumSecondsBetweenFailureNotifications(30);
         setup.MaximumHistoryEntriesPerEndpoint(50);
@@ -44,12 +45,13 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.MapGet("/", () => Results.Ok(new
 {
-    application = "PocHealthCheck.Api (.NET 10)",
+    application = "PocHealthCheck.Api (.NET 8)",
     dashboardUrl = "/healthchecks-ui",
     endpoints = new
     {
@@ -58,7 +60,7 @@ app.MapGet("/", () => Results.Ok(new
         receivedHeartbeats = "/api/heartbeats",
         apiHealth = "/health",
         healthChecksUiDashboard = "/healthchecks-ui",
-        openApiSpec = "/openapi/v1.json"
+        swaggerUi = "/swagger"
     }
 }));
 
@@ -68,7 +70,7 @@ app.MapGet("/api/test", (RemoteHeartbeatStore heartbeatStore) =>
     var workerHeartbeats = heartbeatStore.GetAll();
     return Results.Ok(new
     {
-        message = "Testowy endpoint Web API (.NET 10) działa prawidłowo!",
+        message = "Testowy endpoint Web API (.NET 8) działa prawidłowo!",
         framework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription,
         serverTimeUtc = DateTimeOffset.UtcNow,
         connectedWorkerServices = workerHeartbeats.Count,

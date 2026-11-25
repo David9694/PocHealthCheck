@@ -1,6 +1,6 @@
-# PoC Health Checks, BackgroundServices, Retry & Heartbeat (.NET 10)
+# PoC Health Checks, BackgroundServices, Retry & Heartbeat (.NET 8)
 
-Rozwiązanie składa się z dwóch projektów webowych w **.NET 10**:
+Rozwiązanie składa się z dwóch projektów webowych w **.NET 8**:
 
 1. **`PocHealthCheck.WorkerWeb`** (`http://localhost:5200`) – serwis typu Web zawierający:
    - **2 serwisy `BackgroundService`** wykonujące asynchroniczne zadania cykliczne:

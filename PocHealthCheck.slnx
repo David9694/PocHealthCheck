@@ -1,4 +1,0 @@
-<Solution>
-  <Project Path="PocHealthCheck.Api/PocHealthCheck.Api.csproj" />
-  <Project Path="PocHealthCheck.WorkerWeb/PocHealthCheck.WorkerWeb.csproj" />
-</Solution>

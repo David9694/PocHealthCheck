@@ -78,7 +78,7 @@ app.MapGet("/", (WorkerStateTracker stateTracker, HeartbeatRegistry heartbeatReg
     var now = DateTimeOffset.UtcNow;
     return Results.Ok(new
     {
-        service = "PocHealthCheck.WorkerWeb (.NET 10)",
+        service = "PocHealthCheck.WorkerWeb (.NET 8)",
         startedAtUtc = heartbeatRegistry.ServiceStartedAtUtc,
         uptimeSeconds = Math.Round((now - heartbeatRegistry.ServiceStartedAtUtc).TotalSeconds, 1),
         endpoints = new
