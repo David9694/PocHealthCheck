@@ -1,0 +1,38 @@
+@ApiUrl = http://localhost:5100
+@WorkerUrl = http://localhost:5200
+
+### 1. Testowy endpoint Web API
+GET {{ApiUrl}}/api/test
+Accept: application/json
+
+### 2. Przykładowe zamówienia z Web API
+GET {{ApiUrl}}/api/orders/preview
+Accept: application/json
+
+### 3. Odebrane sygnały Heartbeat w Web API (wysyłane przez WorkerWeb)
+GET {{ApiUrl}}/api/heartbeats
+Accept: application/json
+
+### 4. HealthChecks UI API (dane zasilające dashboard /healthchecks-ui)
+GET {{ApiUrl}}/healthchecks-api
+Accept: application/json
+
+### 5. Pełny HealthCheck serwisu WorkerWeb (cały serwis + oba BackgroundServices + Heartbeat)
+GET {{WorkerUrl}}/health
+Accept: application/json
+
+### 6. HealthCheck wyłącznie dla BackgroundServices
+GET {{WorkerUrl}}/health/workers
+Accept: application/json
+
+### 7. Symulacja zatrzymania Heartbeatu dla OrderProcessingWorker
+POST {{WorkerUrl}}/simulation/OrderProcessingWorker/pause-heartbeat
+
+### 8. Symulacja ciągłego błędu (sprawdzenie mechanizmu Retry Polly -> Unhealthy)
+POST {{WorkerUrl}}/simulation/ReportGenerationWorker/force-failure
+
+### 9. Przywrócenie normalnego działania workerów
+POST {{WorkerUrl}}/simulation/OrderProcessingWorker/recover
+
+###
+POST {{WorkerUrl}}/simulation/ReportGenerationWorker/recover
